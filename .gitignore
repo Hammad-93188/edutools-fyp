@@ -1,0 +1,8 @@
+﻿node_modules/
+dist/
+.env
+.env.local
+migrated_prompt_history/
+.DS_Store
+*.log
+.vscode/
