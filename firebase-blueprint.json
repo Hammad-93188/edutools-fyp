@@ -1,0 +1,137 @@
+{
+  "entities": {
+    "Stats": {
+      "title": "Global Stats",
+      "description": "Global statistics for the application",
+      "type": "object",
+      "properties": {
+        "totalUsers": { "type": "number", "description": "Total number of registered users" },
+        "activeUsers": { "type": "number", "description": "Number of users currently online" }
+      }
+    },
+    "Presence": {
+      "title": "User Presence",
+      "description": "Tracks if a user is currently online",
+      "type": "object",
+      "properties": {
+        "lastSeen": { "type": "string", "format": "date-time", "description": "Last time the user was active" }
+      }
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Personal data for each user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ResumeAnalysis": {
+      "title": "Resume Analysis",
+      "description": "History of resume analyses",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "score": { "type": "number" },
+        "missingKeywords": { "type": "array", "items": { "type": "string" } },
+        "formattingTips": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "QuizSession": {
+        "title": "Quiz Session",
+        "description": "History of quizzes taken",
+        "type": "object",
+        "properties": {
+            "userId": { "type": "string" },
+            "topic": { "type": "string" },
+            "score": { "type": "number" },
+            "questionCount": { "type": "number" },
+            "createdAt": { "type": "string", "format": "date-time" }
+        }
+    },
+    "EmailDraft": {
+        "title": "Email Draft",
+        "description": "Saved email drafts",
+        "type": "object",
+        "properties": {
+            "userId": { "type": "string" },
+            "purpose": { "type": "string" },
+            "tone": { "type": "string" },
+            "language": { "type": "string" },
+            "content": { "type": "string" },
+            "createdAt": { "type": "string", "format": "date-time" }
+        }
+    },
+    "StudyPlan": {
+        "title": "Study Plan",
+        "description": "Saved study roadmaps",
+        "type": "object",
+        "properties": {
+            "userId": { "type": "string" },
+            "goal": { "type": "string" },
+            "roadmapSummary": { "type": "string" },
+            "timeframe": { "type": "string" },
+            "createdAt": { "type": "string", "format": "date-time" }
+        }
+    },
+    "ChatSession": {
+        "title": "Chat Session",
+        "description": "History of AI chatbot conversations",
+        "type": "object",
+        "properties": {
+            "userId": { "type": "string" },
+            "title": { "type": "string" },
+            "messages": { 
+                "type": "array", 
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "role": { "type": "string", "enum": ["user", "model"] },
+                        "content": { "type": "string" }
+                    }
+                }
+            },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "updatedAt": { "type": "string", "format": "date-time" }
+        }
+    }
+  },
+  "firestore": {
+    "/stats/global": {
+      "schema": "Stats",
+      "description": "Global application statistics"
+    },
+    "/presence/{userId}": {
+      "schema": "Presence",
+      "description": "User presence tracking"
+    },
+    "/users/{userId}": {
+        "schema": "UserProfile",
+        "description": "User profile data"
+    },
+    "/resumeAnalysis/{analysisId}": {
+        "schema": "ResumeAnalysis",
+        "description": "Resume analysis records"
+    },
+    "/quizSessions/{sessionId}": {
+        "schema": "QuizSession",
+        "description": "Quiz session records"
+    },
+    "/emailDrafts/{draftId}": {
+        "schema": "EmailDraft",
+        "description": "Email draft records"
+    },
+    "/studyPlans/{planId}": {
+        "schema": "StudyPlan",
+        "description": "Study plan records"
+    },
+    "/chatSessions/{sessionId}": {
+        "schema": "ChatSession",
+        "description": "Chat bot session records"
+    }
+  }
+}
