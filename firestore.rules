@@ -1,0 +1,191 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // -------------------------------------------------------------------------
+    // HELPERS (Phase 3: Primitive Definition)
+    // -------------------------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // -------------------------------------------------------------------------
+    // DEFAULT DENY (Phase 0: Global Safety Net)
+    // -------------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // TEST CONNECTION
+    // -------------------------------------------------------------------------
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // -------------------------------------------------------------------------
+    // GLOBAL STATS
+    // -------------------------------------------------------------------------
+    match /stats/{docId} {
+      allow read: if true;
+      allow create: if isSignedIn() && docId == 'global';
+      allow update: if isSignedIn() && docId == 'global' && 
+                    incoming().diff(existing()).affectedKeys().hasOnly(['totalUsers', 'activeUsers']);
+    }
+
+    // -------------------------------------------------------------------------
+    // PRESENCE
+    // -------------------------------------------------------------------------
+    match /presence/{userId} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isValidId(userId);
+    }
+
+    // -------------------------------------------------------------------------
+    // USERS
+    // -------------------------------------------------------------------------
+    function isValidUser(data) {
+      return data.get('userId', '') == request.auth.uid &&
+             data.get('email', '') is string &&
+             data.get('displayName', '') is string;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && 
+                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email']);
+    }
+
+    // -------------------------------------------------------------------------
+    // RESUME ANALYSIS
+    // -------------------------------------------------------------------------
+    function isValidResumeAnalysis(data) {
+      return data.get('userId', '') == request.auth.uid &&
+             data.get('jobTitle', '') is string &&
+             data.get('score', 0) is number;
+    }
+
+    match /resumeAnalysis/{analysisId} {
+      allow get: if isSignedIn() && existing().get('userId', '') == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.get('userId', '') == request.auth.uid;
+      allow create: if isSignedIn() && isValidResumeAnalysis(incoming());
+      allow delete: if isSignedIn() && existing().get('userId', '') == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // QUIZ SESSIONS
+    // -------------------------------------------------------------------------
+    function isValidQuizSession(data) {
+      return data.get('userId', '') == request.auth.uid &&
+             data.get('topic', '') is string &&
+             data.get('score', 0) is number;
+    }
+
+    match /quizSessions/{sessionId} {
+      allow get: if isSignedIn() && existing().get('userId', '') == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.get('userId', '') == request.auth.uid;
+      allow create: if isSignedIn() && isValidQuizSession(incoming());
+      allow delete: if isSignedIn() && existing().get('userId', '') == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // EMAIL DRAFTS
+    // -------------------------------------------------------------------------
+    function isValidEmailDraft(data) {
+      return data.get('userId', '') == request.auth.uid &&
+             data.get('purpose', '') is string &&
+             data.get('content', '') is string;
+    }
+
+    match /emailDrafts/{draftId} {
+      allow get: if isSignedIn() && existing().get('userId', '') == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.get('userId', '') == request.auth.uid;
+      allow create: if isSignedIn() && isValidEmailDraft(incoming());
+      allow update: if isSignedIn() && existing().get('userId', '') == request.auth.uid && 
+                    isValidEmailDraft(incoming());
+      allow delete: if isSignedIn() && existing().get('userId', '') == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // STUDY PLANS
+    // -------------------------------------------------------------------------
+    function isValidStudyPlan(data) {
+      return data.get('userId', '') == request.auth.uid &&
+             data.get('goal', '') is string;
+    }
+
+    match /studyPlans/{planId} {
+      allow get: if isSignedIn() && existing().get('userId', '') == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.get('userId', '') == request.auth.uid;
+      allow create: if isSignedIn() && isValidStudyPlan(incoming());
+      allow delete: if isSignedIn() && existing().get('userId', '') == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // RESUMES
+    // -------------------------------------------------------------------------
+    function isValidResume(data) {
+      return data.get('userId', '') == request.auth.uid &&
+             data.get('fullName', '') is string;
+    }
+
+    match /resumes/{resumeId} {
+      allow get: if isSignedIn() && existing().get('userId', '') == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.get('userId', '') == request.auth.uid;
+      allow create: if isSignedIn() && isValidResume(incoming());
+      allow update: if isSignedIn() && existing().get('userId', '') == request.auth.uid && 
+                    isValidResume(incoming());
+      allow delete: if isSignedIn() && existing().get('userId', '') == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // HANDWRITTEN ASSIGNMENTS
+    // -------------------------------------------------------------------------
+    function isValidHandwrittenAssignment(data) {
+      return data.get('userId', '') == request.auth.uid &&
+             data.get('content', '') is string;
+    }
+
+    match /handwrittenAssignments/{assignmentId} {
+      allow get: if isSignedIn() && existing().get('userId', '') == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.get('userId', '') == request.auth.uid;
+      allow create: if isSignedIn() && isValidHandwrittenAssignment(incoming());
+      allow delete: if isSignedIn() && existing().get('userId', '') == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // CHAT SESSIONS
+    // -------------------------------------------------------------------------
+    function isValidChatSession(data) {
+      return data.get('userId', '') == request.auth.uid &&
+             data.get('title', '') is string &&
+             data.get('messages', []) is list;
+    }
+
+    match /chatSessions/{sessionId} {
+      allow get: if isSignedIn() && existing().get('userId', '') == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.get('userId', '') == request.auth.uid;
+      allow create: if isSignedIn() && isValidChatSession(incoming());
+      allow update: if isSignedIn() && existing().get('userId', '') == request.auth.uid &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['messages', 'updatedAt', 'title']);
+      allow delete: if isSignedIn() && existing().get('userId', '') == request.auth.uid;
+    }
+  }
+}
